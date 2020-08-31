@@ -1,0 +1,58 @@
+#!C:\Users\shrey\AppData\Local\Programs\Python\Python38\python.exe
+import cgitb
+import cgi
+cgitb.enable()
+import pymysql
+
+
+print("Content-type: text/html\n\n")
+
+#    Create a primitive HTML starter
+print ('''<html>
+<head></head>
+<body>
+''')
+
+#    Get HTTP parameters, mid (meet id) and sid (swimmer Id)
+form = cgi.FieldStorage()
+sid = form.getfirst('sid')
+mid = form.getfirst('mid')
+
+
+
+cnx = pymysql.connect(user='lodhs', 
+                      password='Sce1888419!!',
+                      host='localhost',
+                      port = int('3306'), 
+                      database='swim')
+cursor = cnx.cursor()
+
+query = '''
+SELECT DISTINCT s.FName, s.LName, l.LevelId, l.Level, m.Date, m.Title, e.Title, e.StartTime, e.EndTime
+FROM swimmer AS s INNER JOIN event AS e ON (s.CurrentLevelId = e.LevelId)
+INNER JOIN level AS l ON (l.LevelId = e.LevelId)
+INNER JOIN meet AS m ON (m.MeetId = e.MeetId)
+WHERE s.SwimmerId=%s AND m.MeetId =%s;
+
+'''
+
+# Execute the query: cursor: iterable object
+cursor.execute(query,(int(sid),int(mid)))
+row = cursor.fetchone()
+print('<h1>Swimmer '+str(row[0])+' '+row[1]+'(Id# '+sid+')'+' Level# '+str(row[2])+' : '+str(row[3])+'</h1>')
+print('<p> The swimmer participated in '+str(cursor.rowcount) +' events for meet: '+str(row[5])+' on '+str(row[4])+'</p>')
+print('<table style="border: 1px solid black"> ')
+print('<tr><th style="border: 1px solid black">Event</th><th style="border: 1px solid black">StartTime</th><th style="border: 1px solid black">EndTime</th></tr>')
+print('<tr><td style="border: 1px solid black" >' + str(row[6]) + '</td>'+ '<td style="border: 1px solid black">' + str(row[7]) + '</td>'+'<td style="border: 1px solid black">' + str(row[8]) + '</td></tr>')
+# [3] Use the result in the query
+for r in cursor:  
+   
+    print('<tr><td style="border: 1px solid black">' + str(r[6]) + '</td>'+ '<td style="border: 1px solid black">' + str(r[7]) + '</td>'+'<td style="border: 1px solid black">' + str(r[8]) + '</td></tr>')
+    
+print('</table>')    
+    
+
+
+cursor.close()
+cnx.close()
+
